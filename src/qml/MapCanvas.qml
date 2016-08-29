@@ -22,11 +22,9 @@ import org.qgis 1.0
 
 Item {
   id: mapArea
-  property alias mapSettings: mapCanvasWrapper.mapSettings
 
   MapCanvasMap {
     id: mapCanvasWrapper
-    parallelRendering: true
 
     anchors.fill: parent
   }

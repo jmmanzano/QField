@@ -18,13 +18,14 @@
 #include <qgsvectorlayer.h>
 
 #include "qgssggeometry.h"
+#include "qgsquickmapcanvasmap.h"
 
 FeatureListModelHighlight::FeatureListModelHighlight( QQuickItem* parent )
   : QQuickItem( parent )
   , mModel( 0 )
   , mSelection( 0 )
   , mDirty( false )
-  , mMapSettings( 0 )
+  , mMapCanvas( 0 )
 {
   setFlags( QQuickItem::ItemHasContents );
   setAntialiasing( true );
@@ -72,7 +73,7 @@ void FeatureListModelHighlight::onSelectionChanged()
 
 QSGNode* FeatureListModelHighlight::updatePaintNode( QSGNode* n, QQuickItem::UpdatePaintNodeData* )
 {
-  if ( mDirty && mMapSettings )
+  if ( mDirty && mMapCanvas )
   {
     delete n;
     n = new QSGNode;
@@ -84,7 +85,7 @@ QSGNode* FeatureListModelHighlight::updatePaintNode( QSGNode* n, QQuickItem::Upd
     QgsVectorLayer* layer = mModel->data( firstIndex, FeatureListModel::LayerRole ).value<QgsVectorLayer*>();
     if ( layer )
     {
-      QgsCoordinateTransform transf( layer->crs(), mMapSettings->crs()->crs() );
+      QgsCoordinateTransform transf( layer->crs(), mMapCanvas->mapSettings().destinationCrs() );
 
       for ( int i = 0; i < count; ++i )
       {

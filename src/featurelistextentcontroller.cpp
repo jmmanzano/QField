@@ -14,6 +14,7 @@
  ***************************************************************************/
 
 #include "featurelistextentcontroller.h"
+#include "qgsquickmapcanvasmap.h"
 
 #include <qgsvectorlayer.h>
 #include <qgsgeometry.h>
@@ -22,7 +23,7 @@ FeatureListExtentController::FeatureListExtentController( QObject* parent )
   : QObject( parent )
   , mModel( 0 )
   , mSelection( 0 )
-  , mMapSettings( 0 )
+  , mMapCanvas( 0 )
   , mAutoZoom( false )
 {
   connect( this, SIGNAL( autoZoomChanged() ), SLOT( zoomToSelected() ) );
@@ -36,19 +37,19 @@ FeatureListExtentController::~FeatureListExtentController()
 
 void FeatureListExtentController::zoomToSelected() const
 {
-  if ( mModel && mSelection && mMapSettings )
+  if ( mModel && mSelection && mMapCanvas )
   {
     QgsFeature feat = mSelection->selectedFeature();
     QgsVectorLayer* layer = mSelection->selectedLayer();
 
-    QgsCoordinateTransform transf( layer->crs(), mMapSettings->crs()->crs() );
+    QgsCoordinateTransform transf( layer->crs(), mMapCanvas->mapSettings().destinationCrs() );
     QgsGeometry geom( feat.geometry() );
     geom.transform( transf );
 
     QgsRectangle featureExtent = geom.boundingBox();
     QgsRectangle bufferedExtent = featureExtent.buffer( qMax( featureExtent.width(), featureExtent.height() ) );
 
-    mMapSettings->setExtent( bufferedExtent );
+    mMapCanvas->setExtent( bufferedExtent );
   }
 }
 

@@ -19,16 +19,16 @@
 #include <QQuickItem>
 
 class RubberbandModel;
-class MapSettings;
+class MapCanvas;
 
 class Rubberband : public QQuickItem
 {
     Q_OBJECT
 
     Q_PROPERTY( RubberbandModel* model READ model WRITE setModel NOTIFY modelChanged )
-    Q_PROPERTY( MapSettings* mapSettings READ mapSettings WRITE setMapSettings NOTIFY mapSettingsChanged )
-    Q_PROPERTY( QColor color READ color WRITE setColor NOTIFY colorChanged)
-    Q_PROPERTY( qreal width READ width WRITE setWidth NOTIFY widthChanged)
+    Q_PROPERTY( MapCanvas* mapCanvas READ mapCanvas WRITE setMapCanvas NOTIFY mapCanvasChanged )
+    Q_PROPERTY( QColor color READ color WRITE setColor NOTIFY colorChanged )
+    Q_PROPERTY( qreal width READ width WRITE setWidth NOTIFY widthChanged )
 
   public:
     Rubberband( QQuickItem* parent = nullptr );
@@ -36,18 +36,18 @@ class Rubberband : public QQuickItem
     RubberbandModel* model() const;
     void setModel( RubberbandModel* model );
 
-    MapSettings* mapSettings() const;
-    void setMapSettings( MapSettings* mapSettings );
+    MapCanvas* mapCanvas() const;
+    void setMapCanvas( MapCanvas* mapCanvas );
 
     QColor color() const;
-    void setColor(const QColor& color);
+    void setColor( const QColor& color );
 
     qreal width() const;
-    void setWidth(qreal width);
+    void setWidth( qreal width );
 
   signals:
     void modelChanged();
-    void mapSettingsChanged();
+    void mapCanvasChanged();
     void colorChanged();
     void widthChanged();
 
@@ -58,7 +58,7 @@ class Rubberband : public QQuickItem
     QSGNode* updatePaintNode( QSGNode* n, QQuickItem::UpdatePaintNodeData* );
 
     RubberbandModel* mModel;
-    MapSettings* mMapSettings;
+    MapCanvas* mMapCanvas;
     bool mDirty;
     QColor mColor;
     qreal mWidth;

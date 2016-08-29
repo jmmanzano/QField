@@ -19,12 +19,12 @@
 #include <QtQuick/QQuickTransform>
 #include <QtGui/QMatrix4x4>
 
-#include "mapsettings.h"
+class QgsQuickMapCanvasMap;
 
 class MapTransform : public QQuickTransform
 {
     Q_OBJECT
-    Q_PROPERTY( MapSettings* mapSettings READ mapSettings WRITE setMapSettings NOTIFY mapSettingsChanged )
+    Q_PROPERTY( QgsQuickMapCanvasMap* mapCanvas READ mapCanvas WRITE setMapCanvas NOTIFY mapCanvasChanged )
 
   public:
     MapTransform();
@@ -32,17 +32,17 @@ class MapTransform : public QQuickTransform
 
     void applyTo( QMatrix4x4* matrix ) const;
 
-    MapSettings* mapSettings() const;
-    void setMapSettings( MapSettings* mapSettings );
+    QgsQuickMapCanvasMap* mapCanvas() const;
+    void setMapCanvas( QgsQuickMapCanvasMap* mapCanvas );
 
   signals:
-    void mapSettingsChanged();
+    void mapCanvasChanged();
 
   private slots:
     void updateMatrix();
 
   private:
-    MapSettings* mMapSettings;
+    QgsQuickMapCanvasMap* mMapCanvas;
     QMatrix4x4 mMatrix;
 };
 

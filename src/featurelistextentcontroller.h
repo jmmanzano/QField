@@ -20,7 +20,8 @@
 
 #include "featurelistmodel.h"
 #include "featurelistmodelselection.h"
-#include "mapsettings.h"
+
+class QgsQuickMapCanvasMap;
 
 class FeatureListExtentController : public QObject
 {
@@ -29,7 +30,7 @@ class FeatureListExtentController : public QObject
     Q_PROPERTY( FeatureListModel* model MEMBER mModel NOTIFY modelChanged )
     Q_PROPERTY( FeatureListModelSelection* selection MEMBER mSelection NOTIFY selectionChanged )
     Q_PROPERTY( bool autoZoom MEMBER mAutoZoom NOTIFY autoZoomChanged )
-    Q_PROPERTY( MapSettings* mapSettings MEMBER mMapSettings NOTIFY mapSettingsChanged )
+    Q_PROPERTY( QgsQuickMapCanvasMap* mapCanvas MEMBER mMapCanvas NOTIFY mapCanvasChanged )
 
   public:
     FeatureListExtentController( QObject* parent = 0 );
@@ -42,7 +43,7 @@ class FeatureListExtentController : public QObject
     void autoZoomChanged();
     void selectionChanged();
     void modelChanged();
-    void mapSettingsChanged();
+    void mapCanvasChanged();
 
   private slots:
     void onModelChanged();
@@ -51,7 +52,7 @@ class FeatureListExtentController : public QObject
   private:
     FeatureListModel* mModel;
     FeatureListModelSelection* mSelection;
-    MapSettings* mMapSettings;
+    QgsQuickMapCanvasMap* mMapCanvas;
     bool mAutoZoom;
 };
 

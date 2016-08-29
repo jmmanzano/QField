@@ -53,20 +53,20 @@ void Rubberband::setModel( RubberbandModel* model )
   emit modelChanged();
 }
 
-MapSettings* Rubberband::mapSettings() const
+MapCanvas* Rubberband::mapCanvas() const
 {
-  return mMapSettings;
+  return mMapCanvas;
 }
 
-void Rubberband::setMapSettings( MapSettings* mapSettings )
+void Rubberband::setMapCanvas( MapCanvas* mapCanvas )
 {
-  if ( mMapSettings == mapSettings )
+  if ( mMapCanvas == mapCanvas )
     return;
 
-  mMapSettings = mapSettings;
+  mMapCanvas = mapCanvas;
   markDirty();
 
-  emit mapSettingsChanged();
+  emit mapCanvasChanged();
 }
 
 void Rubberband::markDirty()
@@ -99,7 +99,7 @@ qreal Rubberband::width() const
   return mWidth;
 }
 
-void Rubberband::setWidth(qreal width)
+void Rubberband::setWidth( qreal width )
 {
   mWidth = width;
 }
@@ -109,7 +109,7 @@ QColor Rubberband::color() const
   return mColor;
 }
 
-void Rubberband::setColor(const QColor& color)
+void Rubberband::setColor( const QColor& color )
 {
   mColor = color;
 }

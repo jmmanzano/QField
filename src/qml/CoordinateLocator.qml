@@ -5,7 +5,7 @@ import QtPositioning 5.3
 
 Item {
   id: locator
-  property MapSettings mapSettings
+  property MapCanvas mapCanvas
   property color color: "#263238"
   property color highlightColor: "#CFD8DC"
 
@@ -62,7 +62,7 @@ Item {
   }
 
   Connections {
-    target: mapSettings
+    target: mapCanvas
 
     onExtentChanged: __updateCoordinate()
   }

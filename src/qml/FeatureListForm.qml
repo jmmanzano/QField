@@ -26,7 +26,7 @@ Rectangle {
   id: featureForm
 
   property FeatureListModelSelection selection
-  property MapSettings mapSettings
+  property MapCanvas mapCanvas
   property color selectionColor
 
   states: [
@@ -241,7 +241,7 @@ Rectangle {
     extentController: FeaturelistExtentController {
       model: featureListModel
       selection: featureForm.selection
-      mapSettings: featureForm.mapSettings
+      mapCanvas: featureForm.mapCanvas
     }
 
     onStatusIndicatorClicked: {

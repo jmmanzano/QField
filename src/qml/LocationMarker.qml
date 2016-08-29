@@ -5,7 +5,7 @@ Item {
   id: item
 
   property point location
-  property MapSettings mapSettings
+  property MapCanvas mapCanvas
   property CoordinateTransform coordinateTransform
 
   Rectangle {
@@ -42,14 +42,14 @@ Item {
     border.width: 0.7 * dp
 
     Connections {
-      target: mapSettings
+      target: mapCanvas
       onExtentChanged: {
-        marker.location = mapSettings.coordinateToScreen( coordinateTransform.transform( location ) )
+        marker.location = mapCanvas.coordinateToScreen( coordinateTransform.transform( location ) )
       }
     }
   }
 
   onLocationChanged: {
-    marker.location = mapSettings.coordinateToScreen( coordinateTransform.transform( location ) )
+    marker.location = mapCanvas.coordinateToScreen( coordinateTransform.transform( location ) )
   }
 }

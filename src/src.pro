@@ -27,7 +27,6 @@ HEADERS += \
     featurelistmodelhighlight.h \
     featurelistmodelselection.h \
     featuremodel.h \
-    mapsettings.h \
     maptransform.h \
     qgismobileapp.h \
     qgsmapcanvasproxy.h \
@@ -42,7 +41,8 @@ HEADERS += \
     rubberband.h \
     picturesource.h \
     messagelogmodel.h \
-    attributeformmodel.h
+    attributeformmodel.h \
+    layertreemapcanvasbridge.h
 
 SOURCES += \
     appinterface.cpp \
@@ -54,7 +54,6 @@ SOURCES += \
     featurelistmodelselection.cpp \
     featuremodel.cpp \
     main.cpp \
-    mapsettings.cpp \
     maptransform.cpp \
     qgismobileapp.cpp \
     qgsmapcanvasproxy.cpp \
@@ -69,7 +68,8 @@ SOURCES += \
     rubberband.cpp \
     picturesource.cpp \
     messagelogmodel.cpp \
-    attributeformmodel.cpp
+    attributeformmodel.cpp \
+    layertreemapcanvasbridge.cpp
 
 INCLUDEPATH += ../3rdparty/tessellate
 LIBS += ../3rdparty/tessellate/libtessellate.a

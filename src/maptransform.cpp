@@ -14,6 +14,7 @@
  ***************************************************************************/
 
 #include "maptransform.h"
+#include "qgsquickmapcanvasmap.h"
 
 #include <QDebug>
 
@@ -31,28 +32,28 @@ void MapTransform::applyTo( QMatrix4x4* matrix ) const
   matrix->optimize();
 }
 
-MapSettings* MapTransform::mapSettings() const
+QgsQuickMapCanvasMap* MapTransform::mapCanvas() const
 {
-  return mMapSettings;
+  return mMapCanvas;
 }
 
-void MapTransform::setMapSettings( MapSettings* mapSettings )
+void MapTransform::setMapCanvas( QgsQuickMapCanvasMap* mapSettings )
 {
-  if ( mapSettings != mMapSettings )
+  if ( mapSettings != mMapCanvas )
   {
-    mMapSettings = mapSettings;
-    connect( mMapSettings, SIGNAL(extentChanged()), SLOT(updateMatrix()));
-    emit mapSettingsChanged();
+    mMapCanvas = mapSettings;
+    connect( mMapCanvas, SIGNAL( extentChanged() ), SLOT( updateMatrix() ) );
+    emit mapCanvasChanged();
   }
 }
 
 void MapTransform::updateMatrix()
 {
   QMatrix4x4 matrix;
-  float scaleFactor = 1 / mMapSettings->mapUnitsPerPixel();
+  float scaleFactor = 1 / mMapCanvas->mapSettings().mapUnitsPerPixel();
 
   matrix.scale( scaleFactor, -scaleFactor );
-  matrix.translate( -mMapSettings->visibleExtent().xMinimum(), -mMapSettings->visibleExtent().yMaximum() );
+  matrix.translate( -mMapCanvas->mapSettings().visibleExtent().xMinimum(), -mMapCanvas->mapSettings().visibleExtent().yMaximum() );
 
   mMatrix = matrix;
   update();

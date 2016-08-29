@@ -60,15 +60,6 @@ Rectangle {
      */
     id: mapCanvas
 
-    /* Initialize a MapSettings object. This will contain information about
-     * the current canvas extent. It is shared between the base map and all
-     * map canvas items and is used to transform map coordinates to pixel
-     * coordinates.
-     * It may change any time and items that hold a reference to this property
-     * are responsible to handle this properly.
-     */
-    property MapSettings mapSettings: MapSettings {}
-
     /* Placement and size. Share right anchor with featureForm */
     anchors.top: parent.top
     anchors.left: parent.left
@@ -78,7 +69,6 @@ Rectangle {
     /* The base map */
     MapCanvas {
       id: mapCanvasMap
-      mapSettings: mapCanvas.mapSettings
 
       anchors.fill: parent
     }
@@ -88,14 +78,14 @@ Rectangle {
       anchors.fill: parent
 
       transform: MapTransform {
-        mapSettings: mapCanvas.mapSettings
+        mapCanvas: mapCanvas
       }
 
       /* Highlight the currently selected item on the feature list */
       FeatureListModelHighlight {
         model: featureListModel
         selection: featureForm.selection
-        mapSettings: mapCanvas.mapSettings
+        mapCanvas: mapCanvas
         color: "yellow"
         selectionColor: "#ff7777"
         width: 5 * dp
@@ -106,7 +96,7 @@ Rectangle {
         id: digitizingRubberband
         width: 2 * dp
 
-        mapSettings: mapCanvas.mapSettings
+        mapCanvas: mapCanvas
 
         model: RubberbandModel {
           currentCoordinate: coordinateLocator.coordinate
@@ -129,18 +119,18 @@ Rectangle {
       anchors.fill: parent
       visible: mainWindow.state === "digitize"
       highlightColor: digitizingToolbar.isDigitizing ? digitizingRubberband.color : "#CFD8DC"
-      mapSettings: mapCanvas.mapSettings
+      mapCanvas: mapCanvas
     }
 
     /* GPS marker  */
     LocationMarker {
       id: locationMarker
-      mapSettings: mapCanvas.mapSettings
+      mapCanvas: mapCanvas
       coordinateTransform: CoordinateTransform {
         sourceCRS: CRS {
           srid: 4326
         }
-        destinationCRS: mapCanvas.mapSettings.crs
+        destinationCRS: mapCanvas.destinationCrs
       }
       anchors.fill: parent
       visible: positionSource.active
@@ -172,7 +162,7 @@ Rectangle {
 
     PositionInformationView {
       positionSource: positionSource
-      crs: mapCanvas.mapSettings.crs
+      crs: mapCanvas.destinationCrs
 
       anchors.margins: 5
     }
@@ -181,7 +171,7 @@ Rectangle {
   /* The feature form */
   FeatureListForm {
     id: featureForm
-    mapSettings: mapCanvas.mapSettings
+    mapCanvas: mapCanvas
 
     anchors.right: parent.right
     anchors.top: parent.top

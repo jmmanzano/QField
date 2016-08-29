@@ -17,73 +17,35 @@
 
 #include "qgsquickmapcanvasmap.h"
 
-#include "qgsmapcanvasmap.h"
+#include <qgsmaprendererparalleljob.h>
+#include <qgsmaplayerregistry.h>
+#include <qgsvectorlayer.h>
+#include <qgsmessagelog.h>
 
 QgsQuickMapCanvasMap::QgsQuickMapCanvasMap(  QQuickItem* parent )
   : QQuickPaintedItem( parent )
   , mPinching( false )
 {
-  mMapCanvas = new QgsMapCanvas();
-  // We just use this widget to access the paint engine...
-  mMapCanvas->setAttribute( Qt::WA_DontShowOnScreen );
-  mMapCanvas->setParallelRenderingEnabled( true );
-
   setRenderTarget( QQuickPaintedItem::FramebufferObject );
-  connect( mapCanvas()->scene(), SIGNAL( changed( QList<QRectF> ) ), this, SLOT( update() ) );
 }
 
 QgsQuickMapCanvasMap::~QgsQuickMapCanvasMap()
 {
-  mMapCanvas->deleteLater();
-}
-
-QgsMapCanvas* QgsQuickMapCanvasMap::mapCanvas()
-{
-  return mMapCanvas;
 }
 
 void QgsQuickMapCanvasMap::paint( QPainter* painter )
 {
-  mMapCanvas->render( painter );
+  ////
 }
 
-void QgsQuickMapCanvasMap::setParallelRendering( bool pr )
-{
-  if ( pr != mMapCanvas->isParallelRenderingEnabled() )
-  {
-    mMapCanvas->setParallelRenderingEnabled( true );
-    emit parallelRenderingChanged();
-  }
-}
-
-bool QgsQuickMapCanvasMap::parallelRendering()
-{
-  return mMapCanvas->isParallelRenderingEnabled();
-}
-
-QgsPoint QgsQuickMapCanvasMap::toMapCoordinates( QPoint canvasCoordinates )
-{
-  return mMapCanvas->getCoordinateTransform()->toMapPoint( canvasCoordinates.x(), canvasCoordinates.y() );
-}
-
-void QgsQuickMapCanvasMap::setMapSettings( MapSettings* mapSettings )
-{
-  if ( mMapSettings != mapSettings )
-  {
-    mMapSettings = mapSettings;
-    Q_ASSERT( mMapCanvas );
-    mMapSettings->setQgsMapCanvas( mMapCanvas );
-    emit mapSettingsChanged();
-  }
-}
-
-MapSettings* QgsQuickMapCanvasMap::mapSettings() const
+QgsMapSettings QgsQuickMapCanvasMap::mapSettings() const
 {
   return mMapSettings;
 }
 
 void QgsQuickMapCanvasMap::zoom( QPointF center, qreal scale )
 {
+  /*
   QgsPoint oldCenter( mMapCanvas->mapSettings().visibleExtent().center() );
   QgsPoint mousePos( mMapCanvas->getCoordinateTransform()->toMapPoint( center.x(), center.y() ) );
   QgsPoint newCenter( mousePos.x() + ( ( oldCenter.x() - mousePos.x() ) * scale ),
@@ -95,10 +57,12 @@ void QgsQuickMapCanvasMap::zoom( QPointF center, qreal scale )
   mMapCanvas->setExtent( extent );
 
   update();
+  */
 }
 
 void QgsQuickMapCanvasMap::pan( QPointF oldPos, QPointF newPos )
 {
+  /*
 
   QgsPoint start = mMapCanvas->getCoordinateTransform()->toMapCoordinates( oldPos.toPoint() );
   QgsPoint end = mMapCanvas->getCoordinateTransform()->toMapCoordinates( newPos.toPoint() );
@@ -136,15 +100,180 @@ void QgsQuickMapCanvasMap::pan( QPointF oldPos, QPointF newPos )
   mMapCanvas->setExtent( r );
 
   update();
+  */
 }
 
-void QgsQuickMapCanvasMap::refresh()
+void QgsQuickMapCanvasMap::refreshMap()
 {
-  mMapCanvas->refresh();
+  Q_ASSERT( mRefreshScheduled );
+
+  stopRendering(); // if any...
+
+  // from now on we can accept refresh requests again
+  mRefreshScheduled = false;
+
+  //build the expression context
+  QgsExpressionContext expressionContext;
+  expressionContext << QgsExpressionContextUtils::globalScope()
+                    << QgsExpressionContextUtils::projectScope()
+                    << QgsExpressionContextUtils::mapSettingsScope( mMapSettings );
+
+  mMapSettings.setExpressionContext( expressionContext );
+
+  // create the renderer job
+  Q_ASSERT( !mJob );
+  mJobCancelled = false;
+  mJob = new QgsMapRendererParallelJob( mMapSettings );
+  connect( mJob, SIGNAL( finished() ), SLOT( rendererJobFinished() ) );
+  mJob->setCache( mCache );
+
+  QStringList layersForGeometryCache;
+  Q_FOREACH ( const QString& id, mMapSettings.layers() )
+  {
+    if ( QgsVectorLayer* vl = qobject_cast<QgsVectorLayer*>( QgsMapLayerRegistry::instance()->mapLayer( id ) ) )
+    {
+      if ( vl->isEditable() )
+        layersForGeometryCache << id;
+    }
+  }
+  mJob->setRequestedGeometryCacheForLayers( layersForGeometryCache );
+
+  mJob->start();
+
+  emit renderStarting();
+}
+
+void QgsQuickMapCanvasMap::renderJobFinished()
+{
+  Q_FOREACH ( const QgsMapRendererJob::Error& error, mJob->errors() )
+  {
+    QgsMessageLog::logMessage( error.layerID + " :: " + error.message, tr( "Rendering" ) );
+  }
+
+  if ( !mJobCancelled )
+  {
+    // take labeling results before emitting renderComplete, so labeling map tools
+    // connected to signal work with correct results
+    delete mLabelingResults;
+    mLabelingResults = mJob->takeLabelingResults();
+
+    mImg = mJob->renderedImage();
+  }
+
+  // now we are in a slot called from mJob - do not delete it immediately
+  // so the class is still valid when the execution returns to the class
+  mJob->deleteLater();
+  mJob = nullptr;
+
+  emit mapCanvasRefreshed();
+}
+
+QgsRectangle QgsQuickMapCanvasMap::extent() const
+{
+  return mMapSettings.extent();
+}
+
+void QgsQuickMapCanvasMap::setExtent( const QgsRectangle& extent )
+{
+  if ( mMapSettings.extent() == extent )
+    return;
+
+  mMapSettings.setExtent( extent );
+  emit extentChanged();
+}
+
+QgsCoordinateReferenceSystem QgsQuickMapCanvasMap::destinationCrs() const
+{
+  return mMapSettings.destinationCrs();
+}
+
+void QgsQuickMapCanvasMap::setDestinationCrs( const QgsCoordinateReferenceSystem& destinationCrs )
+{
+  if ( mMapSettings.destinationCrs() == destinationCrs )
+    return;
+
+  mMapSettings.setDestinationCrs( destinationCrs );
+  emit destinationCrsChanged();
 }
 
 void QgsQuickMapCanvasMap::geometryChanged( const QRectF& newGeometry, const QRectF& oldGeometry )
 {
-  mMapCanvas->resize( newGeometry.toRect().width()+1, newGeometry.toRect().height() + 1 );
-  QQuickPaintedItem::geometryChanged( newGeometry, oldGeometry );
+// TDOD
+}
+
+bool QgsQuickMapCanvasMap::hasCrsTransformEnabled() const
+{
+  return mMapSettings.hasCrsTransformEnabled();
+}
+
+void QgsQuickMapCanvasMap::setCrsTransformEnabled( bool crsTransformEnabled )
+{
+  if ( mMapSettings.hasCrsTransformEnabled() == crsTransformEnabled )
+    return;
+
+  mMapSettings.setCrsTransformEnabled( crsTransformEnabled );
+}
+
+QList<QgsMapLayer*> QgsQuickMapCanvasMap::layerSet() const
+{
+  QList<QgsMapLayer*> mapLayers;
+
+  Q_FOREACH( const QString& id, mMapSettings.layers() )
+  {
+    QgsMapLayer* lyr = QgsMapLayerRegistry::instance()->mapLayer( id );
+    if ( lyr )
+      mapLayers << lyr;
+  }
+
+  return mapLayers;
+}
+
+void QgsQuickMapCanvasMap::setLayerSet( const QList<QgsMapLayer*>& layerSet )
+{
+  QStringList ids;
+  Q_FOREACH( QgsMapLayer* layer, layerSet )
+    ids << layer->id();
+
+  mMapSettings.setLayers( ids );
+}
+
+QgsUnitTypes::DistanceUnit QgsQuickMapCanvasMap::mapUnits() const
+{
+  return mMapSettings.mapUnits();
+}
+
+void QgsQuickMapCanvasMap::setMapUnits( const QgsUnitTypes::DistanceUnit& mapUnits )
+{
+  if ( mMapSettings.mapUnits() == mapUnits )
+    return;
+
+  mMapSettings.setMapUnits( mapUnits );
+}
+
+void QgsQuickMapCanvasMap::stopRendering()
+{
+  if ( mJob )
+  {
+    mJobCancelled = true;
+    mJob->cancel();
+    Q_ASSERT( !mJob ); // no need to delete here: already deleted in finished()
+  }
+}
+
+void QgsQuickMapCanvasMap::zoomToFullExtent()
+{
+// TODO
+}
+
+void QgsQuickMapCanvasMap::refresh()
+{
+  if ( !mMapSettings.hasValidSettings() )
+    return;
+
+  if ( mRefreshScheduled )
+    return;
+
+  mRefreshScheduled = true;
+
+  QTimer::singleShot( 1, this, SLOT( refreshMap() ) );
 }
